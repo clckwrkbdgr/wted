@@ -1,4 +1,5 @@
 #include <chthon2/map.h>
+#include <chthon2/format.h>
 #include <ncurses.h>
 #include <cstdlib>
 
@@ -10,6 +11,7 @@ bool fight()
 	Chthon::Point player(0, 2);
 	Chthon::Point enemy(4, 2);
 	int playerhp = 10, enemyhp = 10;
+	std::string fightlog;
 	while(!done) {
 		mvaddch(13, 35, '@');
 		for(int x = 0; x < battlefield.width(); ++x) {
@@ -21,6 +23,7 @@ bool fight()
 		if(enemyhp > 0) {
 			mvaddch(11 + enemy.y, 33 + enemy.x, 'A');
 		}
+		mvprintw(0, 0, "%s", fightlog.c_str());
 
 		char control = getch();
 		Chthon::Point shift;
@@ -37,7 +40,9 @@ bool fight()
 		}
 		if(battlefield.valid(player + shift) && battlefield.cell(player + shift) != '#') {
 			if(player + shift == enemy && enemyhp > 0) {
-				enemyhp -= rand() % 3;
+				int damage = rand() % 3;
+				enemyhp -= damage;
+				fightlog = Chthon::format("You hit enemy for {0} hp.", damage);
 			} else {
 				player += shift;
 			}
@@ -46,7 +51,6 @@ bool fight()
 			return true;
 		}
 	}
-	erase();
 	return true;
 }
 
@@ -79,6 +83,7 @@ int main()
 	int money = 0;
 	bool quit = false;
 	while(!quit) {
+		erase();
 		mvprintw(0, 0, "Money: %d", money);
 		for(int x = -2; x <= 2; ++x) {
 			for(int y = -2; y <= 2; ++y) {
@@ -114,7 +119,6 @@ int main()
 				}
 				mvaddch(player.y, player.x, '@');
 				while(getch() != 'm');
-				erase();
 				break;
 			}
 		}
