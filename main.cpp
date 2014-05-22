@@ -15,6 +15,9 @@ int main()
 	for(int i = 0; i < 250; ++i) {
 		map.cell(rand() % 25, rand() % 25) = '#';
 	}
+	for(int i = 0; i < 25; ++i) {
+		map.cell(rand() % 25, rand() % 25) = '*';
+	}
 
 	Chthon::Point player(rand() % 25, rand() % 25);
 	int tries = 625;
@@ -22,8 +25,10 @@ int main()
 		player = Chthon::Point(rand() % 25, rand() % 25);
 	}
 
+	int money = 0;
 	bool quit = false;
 	while(!quit) {
+		mvprintw(0, 0, "Money: %d", money);
 		for(int x = -2; x <= 2; ++x) {
 			for(int y = -2; y <= 2; ++y) {
 				Chthon::Point pos = player + Chthon::Point(x, y);
@@ -51,6 +56,10 @@ int main()
 		}
 		if(map.valid(player + shift) && map.cell(player + shift) != '#') {
 			player += shift;
+		}
+		if(map.cell(player) == '*') {
+			money += 100;
+			map.cell(player) = '.';
 		}
 	}
 
