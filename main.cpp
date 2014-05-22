@@ -127,6 +127,7 @@ int main()
 				if(fight()) {
 					map.cell(player + shift) = '.';
 					player += shift;
+					money += 50 + rand() % 50;
 				} else {
 					quit = true;
 				}
