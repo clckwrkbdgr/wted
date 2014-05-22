@@ -53,6 +53,19 @@ int main()
 			case 'u' : shift = Chthon::Point( 1, -1); break;
 			case 'b' : shift = Chthon::Point(-1,  1); break;
 			case 'n' : shift = Chthon::Point( 1,  1); break;
+			case 'm' :
+			{
+				erase();
+				for(int x = 0; x < map.width(); ++x) {
+					for(int y = 0; y < map.height(); ++y) {
+						mvaddch(y, x, map.cell(x, y));
+					}
+				}
+				mvaddch(player.y, player.x, '@');
+				while(getch() != 'm');
+				erase();
+				break;
+			}
 		}
 		if(map.valid(player + shift) && map.cell(player + shift) != '#') {
 			player += shift;
