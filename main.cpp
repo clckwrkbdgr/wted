@@ -2,6 +2,54 @@
 #include <ncurses.h>
 #include <cstdlib>
 
+bool fight()
+{
+	erase();
+	bool done = false;
+	Chthon::Map<char> battlefield(5, 5, '.');
+	Chthon::Point player(0, 2);
+	Chthon::Point enemy(4, 2);
+	int playerhp = 10, enemyhp = 10;
+	while(!done) {
+		mvaddch(13, 35, '@');
+		for(int x = 0; x < battlefield.width(); ++x) {
+			for(int y = 0; y < battlefield.height(); ++y) {
+				mvaddch(11 + y, 33 + x, battlefield.cell(x, y));
+			}
+		}
+		mvaddch(11 + player.y, 33 + player.x, '@');
+		if(enemyhp > 0) {
+			mvaddch(11 + enemy.y, 33 + enemy.x, 'A');
+		}
+
+		char control = getch();
+		Chthon::Point shift;
+		switch(control) {
+			case 'q' : return false;
+			case 'h' : shift = Chthon::Point(-1,  0); break;
+			case 'j' : shift = Chthon::Point( 0,  1); break;
+			case 'k' : shift = Chthon::Point( 0, -1); break;
+			case 'l' : shift = Chthon::Point( 1,  0); break;
+			case 'y' : shift = Chthon::Point(-1, -1); break;
+			case 'u' : shift = Chthon::Point( 1, -1); break;
+			case 'b' : shift = Chthon::Point(-1,  1); break;
+			case 'n' : shift = Chthon::Point( 1,  1); break;
+		}
+		if(battlefield.valid(player + shift) && battlefield.cell(player + shift) != '#') {
+			if(player + shift == enemy && enemyhp > 0) {
+				enemyhp -= rand() % 3;
+			} else {
+				player += shift;
+			}
+		}
+		if(enemyhp <= 0) {
+			return true;
+		}
+	}
+	erase();
+	return true;
+}
+
 int main()
 {
 	srand(time(NULL));
@@ -17,6 +65,9 @@ int main()
 	}
 	for(int i = 0; i < 25; ++i) {
 		map.cell(rand() % 25, rand() % 25) = '*';
+	}
+	for(int i = 0; i < 10; ++i) {
+		map.cell(rand() % 25, rand() % 25) = 'A';
 	}
 
 	Chthon::Point player(rand() % 25, rand() % 25);
@@ -68,7 +119,16 @@ int main()
 			}
 		}
 		if(map.valid(player + shift) && map.cell(player + shift) != '#') {
-			player += shift;
+			if(map.cell(player + shift) == 'A') {
+				if(fight()) {
+					map.cell(player + shift) = '.';
+					player += shift;
+				} else {
+					quit = true;
+				}
+			} else {
+				player += shift;
+			}
 		}
 		if(map.cell(player) == '*') {
 			money += 100;
