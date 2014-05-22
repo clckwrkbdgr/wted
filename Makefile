@@ -9,7 +9,7 @@ CXXFLAGS = -MD -MP -std=c++0x $(WARNINGS)
 all: $(BIN)
 
 run: $(BIN)
-	./$(BIN)
+	screen sh -c './$(BIN) || exec bash'
 
 $(BIN): $(OBJ)
 	$(CXX) $(LIBS) -o $@ $^
