@@ -8,6 +8,10 @@ bool fight()
 	erase();
 	bool done = false;
 	Chthon::Map<char> battlefield(5, 5, '.');
+	int forest_count = rand() % 5;
+	for(int i = 0; i < forest_count; ++i) {
+		battlefield.cell(1 + rand() % 3, rand() % 5) = '#';
+	}
 	Chthon::Point player(0, 2);
 	Chthon::Point enemy(4, 2);
 	int playerhp = 10, enemyhp = 10;
