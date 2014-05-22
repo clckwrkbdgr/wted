@@ -19,3 +19,11 @@
 *.exe
 *.out
 *.app
+
+# Build
+tmp/
+wted
+
+# Vim
+.*.swp
+
