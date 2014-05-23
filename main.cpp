@@ -136,6 +136,14 @@ struct Cell {
 	{}
 };
 
+int fibonacci(int n)
+{
+	if(n <= 1) {
+		return 1;
+	}
+	return fibonacci(n - 1) + fibonacci(n - 2);
+}
+
 int main()
 {
 	std::ofstream log_file("wted.log");
@@ -227,6 +235,40 @@ int main()
 				}
 				mvaddch(player.y, player.x, '@');
 				while(getch() != 'm');
+				break;
+			}
+			case 'c':
+			{
+				erase();
+				bool done = false;
+				while(!done) {
+					int strength_cost = fibonacci(strength + 1) * 100;
+					int endurance_cost = fibonacci(endurance + 1) * 100;
+					mvprintw(0, 0, "Money: %d      ", money);
+					mvprintw(1, 0, "Strength: %d (%d to increase)", strength, strength_cost);
+					mvprintw(2, 0, "Endurance: %d (%d to increase)", endurance, endurance_cost);
+					mvprintw(3, 0, "Increase strength (a), increase endurance (2) or exit (space)");
+					int ch = getch();
+					switch(ch) {
+						case 'a':
+							if(money >= strength_cost) {
+								++strength;
+								money -= strength_cost;
+							} else {
+								mvprintw(4, 0, "Not enough money to increase strength! ");
+							}
+							break;
+						case 'b':
+							if(money >= endurance_cost) {
+								++endurance;
+								money -= endurance_cost;
+							} else {
+								mvprintw(4, 0, "Not enough money to increase endurance!");
+							}
+							break;
+						case ' ': done = true; break;
+					}
+				}
 				break;
 			}
 			case 'd':
