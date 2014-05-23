@@ -1,5 +1,6 @@
 #include <chthon2/map.h>
 #include <chthon2/format.h>
+#include <chthon2/util.h>
 #include <ncurses.h>
 #include <cstdlib>
 
@@ -13,7 +14,6 @@ struct Character {
 
 bool fight()
 {
-	erase();
 	bool done = false;
 	Chthon::Map<char> battlefield(5, 5, '.');
 	int forest_count = rand() % 5;
@@ -21,20 +21,27 @@ bool fight()
 		battlefield.cell(1 + rand() % 3, rand() % 5) = '#';
 	}
 	Character player({0, 2}, 10);
-	Character enemy({4, 2}, 10);
-	std::string fightlog;
+	std::vector<Character> enemies;
+	int enemy_count = 1 + rand() % 3;
+	for(int i = 0; i < enemy_count; ++i) {
+		enemies << Character({4, (3 - enemy_count) + i * 2}, 10);
+	}
+	std::vector<std::string> fightlog;
 	while(!done) {
-		mvaddch(13, 35, '@');
+		erase();
 		for(int x = 0; x < battlefield.width(); ++x) {
 			for(int y = 0; y < battlefield.height(); ++y) {
 				mvaddch(11 + y, 33 + x, battlefield.cell(x, y));
 			}
 		}
 		mvaddch(11 + player.pos.y, 33 + player.pos.x, '@');
-		if(enemy.hp > 0) {
+		for(const Character & enemy : enemies) {
 			mvaddch(11 + enemy.pos.y, 33 + enemy.pos.x, 'A');
 		}
-		mvprintw(0, 0, "%s", fightlog.c_str());
+		int start_line = std::max(int(fightlog.size()) - 10, 0);
+		for(int i = start_line; i < fightlog.size(); ++i) {
+			mvprintw(i - start_line, 0, "%s", fightlog[i].c_str());
+		}
 
 		char control = getch();
 		Chthon::Point shift;
@@ -50,15 +57,28 @@ bool fight()
 			case 'n' : shift = Chthon::Point( 1,  1); break;
 		}
 		if(battlefield.valid(player.pos + shift) && battlefield.cell(player.pos + shift) != '#') {
-			if(player.pos + shift == enemy.pos && enemy.hp > 0) {
-				int damage = rand() % 3;
-				enemy.hp -= damage;
-				fightlog = Chthon::format("You hit enemy for {0} hp.", damage);
-			} else {
+			bool fought = false;
+			for(Character & enemy : enemies) {
+				if(player.pos + shift == enemy.pos && enemy.hp > 0) {
+					int damage = rand() % 3;
+					enemy.hp -= damage;
+					fightlog << Chthon::format("You hit enemy for {0} hp.", damage);
+					if(enemy.hp <= 0) {
+						fightlog << "Enemy is dead.";
+					}
+					fought = true;
+					break;
+				}
+			}
+			if(!fought) {
 				player.pos += shift;
 			}
 		}
-		if(enemy.hp <= 0) {
+		enemies.erase(std::remove_if(
+					enemies.begin(), enemies.end(),
+					[](const Character & enemy){ return enemy.hp <= 0; }
+					), enemies.end());
+		if(enemies.empty()) {
 			return true;
 		}
 	}
@@ -138,7 +158,7 @@ int main()
 				if(fight()) {
 					map.cell(player + shift) = '.';
 					player += shift;
-					money += 50 + rand() % 50;
+					money += 100 + rand() % 500;
 				} else {
 					quit = true;
 				}
