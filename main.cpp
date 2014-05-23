@@ -3,6 +3,14 @@
 #include <ncurses.h>
 #include <cstdlib>
 
+struct Character {
+	Chthon::Point pos;
+	int hp;
+	Character(const Chthon::Point & char_pos, int char_hp)
+		: pos(char_pos), hp(char_hp)
+	{}
+};
+
 bool fight()
 {
 	erase();
@@ -12,9 +20,8 @@ bool fight()
 	for(int i = 0; i < forest_count; ++i) {
 		battlefield.cell(1 + rand() % 3, rand() % 5) = '#';
 	}
-	Chthon::Point player(0, 2);
-	Chthon::Point enemy(4, 2);
-	int playerhp = 10, enemyhp = 10;
+	Character player({0, 2}, 10);
+	Character enemy({4, 2}, 10);
 	std::string fightlog;
 	while(!done) {
 		mvaddch(13, 35, '@');
@@ -23,9 +30,9 @@ bool fight()
 				mvaddch(11 + y, 33 + x, battlefield.cell(x, y));
 			}
 		}
-		mvaddch(11 + player.y, 33 + player.x, '@');
-		if(enemyhp > 0) {
-			mvaddch(11 + enemy.y, 33 + enemy.x, 'A');
+		mvaddch(11 + player.pos.y, 33 + player.pos.x, '@');
+		if(enemy.hp > 0) {
+			mvaddch(11 + enemy.pos.y, 33 + enemy.pos.x, 'A');
 		}
 		mvprintw(0, 0, "%s", fightlog.c_str());
 
@@ -42,16 +49,16 @@ bool fight()
 			case 'b' : shift = Chthon::Point(-1,  1); break;
 			case 'n' : shift = Chthon::Point( 1,  1); break;
 		}
-		if(battlefield.valid(player + shift) && battlefield.cell(player + shift) != '#') {
-			if(player + shift == enemy && enemyhp > 0) {
+		if(battlefield.valid(player.pos + shift) && battlefield.cell(player.pos + shift) != '#') {
+			if(player.pos + shift == enemy.pos && enemy.hp > 0) {
 				int damage = rand() % 3;
-				enemyhp -= damage;
+				enemy.hp -= damage;
 				fightlog = Chthon::format("You hit enemy for {0} hp.", damage);
 			} else {
-				player += shift;
+				player.pos += shift;
 			}
 		}
-		if(enemyhp <= 0) {
+		if(enemy.hp <= 0) {
 			return true;
 		}
 	}
