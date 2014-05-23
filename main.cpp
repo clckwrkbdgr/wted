@@ -155,7 +155,7 @@ int main()
 	for(int i = 0; i < 25; ++i) {
 		map.cell(rand() % 25, rand() % 25) = '*';
 	}
-	for(int i = 0; i < 10; ++i) {
+	for(int i = 0; i < 25; ++i) {
 		map.cell(rand() % 25, rand() % 25) = 'A';
 	}
 
