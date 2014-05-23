@@ -172,11 +172,12 @@ int main()
 	}
 	Chthon::Map<char> puzzle(5, 5, 0);
 
+	int days_left = 300;
 	int money = 0;
 	bool quit = false;
 	while(!quit) {
 		erase();
-		mvprintw(0, 0, "Money: %d", money);
+		mvprintw(0, 0, "Money: %d     Days left: %d", money, days_left);
 		for(int x = -2; x <= 2; ++x) {
 			for(int y = -2; y <= 2; ++y) {
 				Chthon::Point pos = player + Chthon::Point(x, y);
@@ -254,6 +255,10 @@ int main()
 				}
 			} else {
 				player += shift;
+			}
+			--days_left;
+			if(days_left <= 0) {
+				quit = true;
 			}
 		}
 		if(map.cell(player).sprite == '*') {
