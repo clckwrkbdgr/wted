@@ -160,7 +160,7 @@ int main()
 	Chthon::Point artifact = Chthon::Point(2 + rand() % 21, 2 + rand() % 21);
 	tries = 625;
 	while(map.cell(artifact) == '#' && tries --> 0) {
-		artifact = Chthon::Point(rand() % 25, rand() % 25);
+		artifact = Chthon::Point(2 + rand() % 21, 2 + rand() % 21);
 	}
 
 	int money = 0;
@@ -214,6 +214,13 @@ int main()
 				}
 				mvaddch(player.y, player.x, '@');
 				while(getch() != 'm');
+				break;
+			}
+			case 'd':
+			{
+				if(player == artifact) {
+					quit = true;
+				}
 				break;
 			}
 		}
