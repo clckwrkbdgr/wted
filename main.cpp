@@ -279,7 +279,7 @@ int main()
 				break;
 			}
 		}
-		if(map.valid(player + shift) && map.cell(player + shift).sprite != '#') {
+		if(!shift.null() && map.valid(player + shift) && map.cell(player + shift).sprite != '#') {
 			if(map.cell(player + shift).sprite == 'A') {
 				int enemy_count = 1 + rand() % 3;
 				mvprintw(17, 0, "There are %d enemies. Do you want to fight them? (y/n)", enemy_count);
