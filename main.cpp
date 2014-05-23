@@ -129,6 +129,14 @@ bool fight()
 	return true;
 }
 
+struct Cell {
+	char sprite;
+	bool seen;
+	Cell(char cell_sprite = ' ', bool cell_seen = false)
+		: sprite(cell_sprite), seen(cell_seen)
+	{}
+};
+
 int main()
 {
 	std::ofstream log_file("wted.log");
@@ -140,7 +148,7 @@ int main()
 	noecho();
 	curs_set(0);
 
-	Chthon::Map<char> map(25, 25, '.');
+	Chthon::Map<Cell> map(25, 25, '.');
 	for(int i = 0; i < 250; ++i) {
 		map.cell(rand() % 25, rand() % 25) = '#';
 	}
@@ -153,13 +161,13 @@ int main()
 
 	Chthon::Point player(rand() % 25, rand() % 25);
 	int tries = 625;
-	while(map.cell(player) == '#' && tries --> 0) {
+	while(map.cell(player).sprite == '#' && tries --> 0) {
 		player = Chthon::Point(rand() % 25, rand() % 25);
 	}
 
 	Chthon::Point artifact = Chthon::Point(2 + rand() % 21, 2 + rand() % 21);
 	tries = 625;
-	while(map.cell(artifact) == '#' && tries --> 0) {
+	while(map.cell(artifact).sprite == '#' && tries --> 0) {
 		artifact = Chthon::Point(2 + rand() % 21, 2 + rand() % 21);
 	}
 	Chthon::Map<char> puzzle(5, 5, 0);
@@ -173,7 +181,8 @@ int main()
 			for(int y = -2; y <= 2; ++y) {
 				Chthon::Point pos = player + Chthon::Point(x, y);
 				if(map.valid(pos)) {
-					mvaddch(13 + y, 35 + x, map.cell(pos));
+					mvaddch(13 + y, 35 + x, map.cell(pos).sprite);
+					map.cell(pos).seen = true;
 				} else {
 					mvaddch(13 + y, 35 + x, ' ');
 				}
@@ -185,7 +194,7 @@ int main()
 			for(int y = -2; y <= 2; ++y) {
 				Chthon::Point pos = artifact + Chthon::Point(x, y);
 				if(map.valid(pos) && puzzle.cell(x + 2, y + 2)) {
-					mvaddch(13 + y, 65 + x, map.cell(pos));
+					mvaddch(13 + y, 65 + x, map.cell(pos).sprite);
 				} else {
 					mvaddch(13 + y, 65 + x, ' ');
 				}
@@ -210,7 +219,9 @@ int main()
 				erase();
 				for(int x = 0; x < map.width(); ++x) {
 					for(int y = 0; y < map.height(); ++y) {
-						mvaddch(y, x, map.cell(x, y));
+						if(map.cell(x, y).seen) {
+							mvaddch(y, x, map.cell(x, y).sprite);
+						}
 					}
 				}
 				mvaddch(player.y, player.x, '@');
@@ -225,8 +236,8 @@ int main()
 				break;
 			}
 		}
-		if(map.valid(player + shift) && map.cell(player + shift) != '#') {
-			if(map.cell(player + shift) == 'A') {
+		if(map.valid(player + shift) && map.cell(player + shift).sprite != '#') {
+			if(map.cell(player + shift).sprite == 'A') {
 				if(fight()) {
 					map.cell(player + shift) = '.';
 					player += shift;
@@ -245,7 +256,7 @@ int main()
 				player += shift;
 			}
 		}
-		if(map.cell(player) == '*') {
+		if(map.cell(player).sprite == '*') {
 			money += 100;
 			map.cell(player) = '.';
 		}
