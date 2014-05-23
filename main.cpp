@@ -1,8 +1,10 @@
 #include <chthon2/pathfinding.h>
 #include <chthon2/map.h>
+#include <chthon2/log.h>
 #include <chthon2/format.h>
 #include <chthon2/util.h>
 #include <ncurses.h>
+#include <fstream>
 #include <cstdlib>
 
 struct Character {
@@ -21,11 +23,11 @@ bool fight()
 	for(int i = 0; i < forest_count; ++i) {
 		battlefield.cell(1 + rand() % 3, rand() % 5) = '#';
 	}
-	Character player({0, 2}, 10);
+	Character player({0, 2}, 20);
 	std::vector<Character> enemies;
 	int enemy_count = 1 + rand() % 3;
 	for(int i = 0; i < enemy_count; ++i) {
-		enemies << Character({4, (3 - enemy_count) + i * 2}, 10);
+		enemies << Character({4, (3 - enemy_count) + i * 2}, 5);
 	}
 	std::vector<std::string> fightlog;
 	while(!done) {
@@ -39,9 +41,10 @@ bool fight()
 		for(const Character & enemy : enemies) {
 			mvaddch(11 + enemy.pos.y, 33 + enemy.pos.x, 'A');
 		}
+		mvprintw(0, 0, "HP: %d", player.hp);
 		int start_line = std::max(int(fightlog.size()) - 10, 0);
 		for(int i = start_line; i < fightlog.size(); ++i) {
-			mvprintw(i - start_line, 0, "%s", fightlog[i].c_str());
+			mvprintw(1 + i - start_line, 0, "%s", fightlog[i].c_str());
 		}
 
 		Chthon::Point shift;
@@ -82,10 +85,43 @@ bool fight()
 		if(!fought) {
 			player.pos += shift;
 		}
+
 		enemies.erase(std::remove_if(
 					enemies.begin(), enemies.end(),
 					[](const Character & enemy){ return enemy.hp <= 0; }
 					), enemies.end());
+		Chthon::Pathfinder finder;
+		for(Character & enemy : enemies) {
+			bool ok = finder.lee(enemy.pos, player.pos,
+					[&](const Chthon::Point & p) {
+					if(p == enemy.pos) {
+						return true;
+					}
+					for(const Character & other : enemies) {
+						if(other.pos == p) {
+							return false;
+						}
+					}
+					return battlefield.valid(p) && battlefield.cell(p) == '.';
+					}
+					);
+			if(ok) {
+				Chthon::Point new_pos = enemy.pos + finder.directions.front();
+				if(new_pos == player.pos) {
+					int damage = rand() % 2;
+					player.hp -= damage;
+					fightlog << Chthon::format("Enemy hit you for {0} hp.", damage);
+					if(player.hp <= 0) {
+						fightlog << "You are dead.";
+					}
+					if(player.hp <= 0) {
+						return false;
+					}
+				} else {
+					enemy.pos = new_pos;
+				}
+			}
+		}
 		if(enemies.empty()) {
 			return true;
 		}
@@ -95,6 +131,8 @@ bool fight()
 
 int main()
 {
+	std::ofstream log_file("wted.log");
+	Chthon::direct_log(&log_file);
 	srand(time(NULL));
 	initscr();
 	raw();
