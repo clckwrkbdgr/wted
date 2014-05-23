@@ -1,3 +1,4 @@
+#include <chthon2/pathfinding.h>
 #include <chthon2/map.h>
 #include <chthon2/format.h>
 #include <chthon2/util.h>
@@ -43,36 +44,43 @@ bool fight()
 			mvprintw(i - start_line, 0, "%s", fightlog[i].c_str());
 		}
 
-		char control = getch();
 		Chthon::Point shift;
-		switch(control) {
-			case 'q' : return false;
-			case 'h' : shift = Chthon::Point(-1,  0); break;
-			case 'j' : shift = Chthon::Point( 0,  1); break;
-			case 'k' : shift = Chthon::Point( 0, -1); break;
-			case 'l' : shift = Chthon::Point( 1,  0); break;
-			case 'y' : shift = Chthon::Point(-1, -1); break;
-			case 'u' : shift = Chthon::Point( 1, -1); break;
-			case 'b' : shift = Chthon::Point(-1,  1); break;
-			case 'n' : shift = Chthon::Point( 1,  1); break;
+		while(true) {
+			char control = getch();
+			switch(control) {
+				case 'q' : return false;
+				case 'h' : shift = Chthon::Point(-1,  0); break;
+				case 'j' : shift = Chthon::Point( 0,  1); break;
+				case 'k' : shift = Chthon::Point( 0, -1); break;
+				case 'l' : shift = Chthon::Point( 1,  0); break;
+				case 'y' : shift = Chthon::Point(-1, -1); break;
+				case 'u' : shift = Chthon::Point( 1, -1); break;
+				case 'b' : shift = Chthon::Point(-1,  1); break;
+				case 'n' : shift = Chthon::Point( 1,  1); break;
+			}
+			bool choice_made = !shift.null();
+			bool valid_pos = battlefield.valid(player.pos + shift);
+			bool not_forest = battlefield.cell(player.pos + shift) != '#';
+			if(choice_made && valid_pos && not_forest) {
+				break;
+			}
 		}
-		if(battlefield.valid(player.pos + shift) && battlefield.cell(player.pos + shift) != '#') {
-			bool fought = false;
-			for(Character & enemy : enemies) {
-				if(player.pos + shift == enemy.pos && enemy.hp > 0) {
-					int damage = rand() % 3;
-					enemy.hp -= damage;
-					fightlog << Chthon::format("You hit enemy for {0} hp.", damage);
-					if(enemy.hp <= 0) {
-						fightlog << "Enemy is dead.";
-					}
-					fought = true;
-					break;
+
+		bool fought = false;
+		for(Character & enemy : enemies) {
+			if(player.pos + shift == enemy.pos && enemy.hp > 0) {
+				int damage = rand() % 3;
+				enemy.hp -= damage;
+				fightlog << Chthon::format("You hit enemy for {0} hp.", damage);
+				if(enemy.hp <= 0) {
+					fightlog << "Enemy is dead.";
 				}
+				fought = true;
+				break;
 			}
-			if(!fought) {
-				player.pos += shift;
-			}
+		}
+		if(!fought) {
+			player.pos += shift;
 		}
 		enemies.erase(std::remove_if(
 					enemies.begin(), enemies.end(),
