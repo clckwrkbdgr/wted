@@ -15,7 +15,7 @@ struct Character {
 	{}
 };
 
-bool fight(int enemy_count)
+bool fight(int strength, int endurance, int enemy_count)
 {
 	bool done = false;
 	Chthon::Map<char> battlefield(5, 5, '.');
@@ -23,7 +23,7 @@ bool fight(int enemy_count)
 	for(int i = 0; i < forest_count; ++i) {
 		battlefield.cell(1 + rand() % 3, rand() % 5) = '#';
 	}
-	Character player({0, 2}, 10);
+	Character player({0, 2}, 10 + endurance);
 	std::vector<Character> enemies;
 	for(int i = 0; i < enemy_count; ++i) {
 		enemies << Character({4, (3 - enemy_count) + i * 2}, 10);
@@ -71,7 +71,7 @@ bool fight(int enemy_count)
 		bool fought = false;
 		for(Character & enemy : enemies) {
 			if(player.pos + shift == enemy.pos && enemy.hp > 0) {
-				int damage = rand() % 3;
+				int damage = strength + rand() % 3;
 				enemy.hp -= damage;
 				fightlog << Chthon::format("You hit enemy for {0} hp.", damage);
 				if(enemy.hp <= 0) {
@@ -174,6 +174,7 @@ int main()
 	int days_left = 300;
 	int money = 0;
 	bool quit = false;
+	int strength = 0, endurance = 0;
 	while(!quit) {
 		erase();
 		mvprintw(0, 0, "Money: %d     Days left: %d", money, days_left);
@@ -245,7 +246,7 @@ int main()
 					answer = getch();
 				}
 				if(answer == 'y') {
-					if(fight(enemy_count)) {
+					if(fight(strength, endurance, enemy_count)) {
 						map.cell(player + shift) = '.';
 						player += shift;
 						money += 100 + rand() % 200 * enemy_count;
