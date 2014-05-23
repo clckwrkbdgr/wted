@@ -15,7 +15,7 @@ struct Character {
 	{}
 };
 
-bool fight()
+bool fight(int enemy_count)
 {
 	bool done = false;
 	Chthon::Map<char> battlefield(5, 5, '.');
@@ -23,11 +23,10 @@ bool fight()
 	for(int i = 0; i < forest_count; ++i) {
 		battlefield.cell(1 + rand() % 3, rand() % 5) = '#';
 	}
-	Character player({0, 2}, 20);
+	Character player({0, 2}, 10);
 	std::vector<Character> enemies;
-	int enemy_count = 1 + rand() % 3;
 	for(int i = 0; i < enemy_count; ++i) {
-		enemies << Character({4, (3 - enemy_count) + i * 2}, 5);
+		enemies << Character({4, (3 - enemy_count) + i * 2}, 10);
 	}
 	std::vector<std::string> fightlog;
 	while(!done) {
@@ -239,19 +238,27 @@ int main()
 		}
 		if(map.valid(player + shift) && map.cell(player + shift).sprite != '#') {
 			if(map.cell(player + shift).sprite == 'A') {
-				if(fight()) {
-					map.cell(player + shift) = '.';
-					player += shift;
-					money += 100 + rand() % 500;
+				int enemy_count = 1 + rand() % 3;
+				mvprintw(17, 0, "There are %d enemies. Do you want to fight them? (y/n)", enemy_count);
+				int answer = 0;
+				while(answer != 'y' && answer != 'n') {
+					answer = getch();
+				}
+				if(answer == 'y') {
+					if(fight(enemy_count)) {
+						map.cell(player + shift) = '.';
+						player += shift;
+						money += 100 + rand() % 200 * enemy_count;
 
-					Chthon::Point piece = Chthon::Point(rand() % 5, rand() % 5);
-					tries = 625;
-					while(puzzle.cell(piece) && tries --> 0) {
-						piece = Chthon::Point(rand() % 5, rand() % 5);
+						Chthon::Point piece = Chthon::Point(rand() % 5, rand() % 5);
+						tries = 625;
+						while(puzzle.cell(piece) && tries --> 0) {
+							piece = Chthon::Point(rand() % 5, rand() % 5);
+						}
+						puzzle.cell(piece) = 1;
+					} else {
+						quit = true;
 					}
-					puzzle.cell(piece) = 1;
-				} else {
-					quit = true;
 				}
 			} else {
 				player += shift;
