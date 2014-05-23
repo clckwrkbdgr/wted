@@ -162,6 +162,7 @@ int main()
 	while(map.cell(artifact) == '#' && tries --> 0) {
 		artifact = Chthon::Point(2 + rand() % 21, 2 + rand() % 21);
 	}
+	Chthon::Map<char> puzzle(5, 5, 0);
 
 	int money = 0;
 	bool quit = false;
@@ -183,7 +184,7 @@ int main()
 		for(int x = -2; x <= 2; ++x) {
 			for(int y = -2; y <= 2; ++y) {
 				Chthon::Point pos = artifact + Chthon::Point(x, y);
-				if(map.valid(pos)) {
+				if(map.valid(pos) && puzzle.cell(x + 2, y + 2)) {
 					mvaddch(13 + y, 65 + x, map.cell(pos));
 				} else {
 					mvaddch(13 + y, 65 + x, ' ');
@@ -230,6 +231,13 @@ int main()
 					map.cell(player + shift) = '.';
 					player += shift;
 					money += 100 + rand() % 500;
+
+					Chthon::Point piece = Chthon::Point(rand() % 5, rand() % 5);
+					tries = 625;
+					while(puzzle.cell(piece) && tries --> 0) {
+						piece = Chthon::Point(rand() % 5, rand() % 5);
+					}
+					puzzle.cell(piece) = 1;
 				} else {
 					quit = true;
 				}
