@@ -23,6 +23,7 @@
 # Build
 tmp/
 wted
+*.log
 
 # Vim
 .*.swp

@@ -157,6 +157,12 @@ int main()
 		player = Chthon::Point(rand() % 25, rand() % 25);
 	}
 
+	Chthon::Point artifact = Chthon::Point(2 + rand() % 21, 2 + rand() % 21);
+	tries = 625;
+	while(map.cell(artifact) == '#' && tries --> 0) {
+		artifact = Chthon::Point(rand() % 25, rand() % 25);
+	}
+
 	int money = 0;
 	bool quit = false;
 	while(!quit) {
@@ -173,6 +179,18 @@ int main()
 			}
 		}
 		mvaddch(13, 35, '@');
+
+		for(int x = -2; x <= 2; ++x) {
+			for(int y = -2; y <= 2; ++y) {
+				Chthon::Point pos = artifact + Chthon::Point(x, y);
+				if(map.valid(pos)) {
+					mvaddch(13 + y, 65 + x, map.cell(pos));
+				} else {
+					mvaddch(13 + y, 65 + x, ' ');
+				}
+			}
+		}
+		mvaddch(13, 65, 'X');
 
 		char control = getch();
 		Chthon::Point shift;
