@@ -15,7 +15,41 @@ struct Character {
 	{}
 };
 
-bool fight(int strength, int endurance, int enemy_count)
+struct Cell {
+	char sprite;
+	bool seen;
+	Cell(char cell_sprite = ' ', bool cell_seen = false)
+		: sprite(cell_sprite), seen(cell_seen)
+	{}
+};
+
+int fibonacci(int n)
+{
+	if(n <= 1) {
+		return 1;
+	}
+	return fibonacci(n - 1) + fibonacci(n - 2);
+}
+
+class Game {
+public:
+	Game();
+	virtual ~Game();
+	void create();
+	int run();
+private:
+	Chthon::Map<Cell> map;
+	Chthon::Point player, artifact;
+	Chthon::Map<char> puzzle;
+	int days_left;
+	int money;
+	bool quit;
+	int strength, endurance;
+
+	bool fight(int enemy_count);
+};
+
+bool Game::fight(int enemy_count)
 {
 	bool done = false;
 	Chthon::Map<char> battlefield(5, 5, '.');
@@ -128,34 +162,16 @@ bool fight(int strength, int endurance, int enemy_count)
 	return true;
 }
 
-struct Cell {
-	char sprite;
-	bool seen;
-	Cell(char cell_sprite = ' ', bool cell_seen = false)
-		: sprite(cell_sprite), seen(cell_seen)
-	{}
-};
-
-int fibonacci(int n)
+Game::Game()
+	: map(25, 25, '.'), puzzle(5, 5, 0),
+	days_left(300), money(0), quit(false), strength(0), endurance(0)
 {
-	if(n <= 1) {
-		return 1;
-	}
-	return fibonacci(n - 1) + fibonacci(n - 2);
-}
-
-int main()
-{
-	std::ofstream log_file("wted.log");
-	Chthon::direct_log(&log_file);
-	srand(time(NULL));
 	initscr();
 	raw();
 	keypad(stdscr, TRUE);
 	noecho();
 	curs_set(0);
 
-	Chthon::Map<Cell> map(25, 25, '.');
 	for(int i = 0; i < 250; ++i) {
 		map.cell(rand() % 25, rand() % 25) = '#';
 	}
@@ -166,23 +182,21 @@ int main()
 		map.cell(rand() % 25, rand() % 25) = 'A';
 	}
 
-	Chthon::Point player(rand() % 25, rand() % 25);
+	player = Chthon::Point(rand() % 25, rand() % 25);
 	int tries = 625;
 	while(map.cell(player).sprite == '#' && tries --> 0) {
 		player = Chthon::Point(rand() % 25, rand() % 25);
 	}
 
-	Chthon::Point artifact = Chthon::Point(2 + rand() % 21, 2 + rand() % 21);
+	artifact = Chthon::Point(2 + rand() % 21, 2 + rand() % 21);
 	tries = 625;
 	while(map.cell(artifact).sprite == '#' && tries --> 0) {
 		artifact = Chthon::Point(2 + rand() % 21, 2 + rand() % 21);
 	}
-	Chthon::Map<char> puzzle(5, 5, 0);
+}
 
-	int days_left = 300;
-	int money = 0;
-	bool quit = false;
-	int strength = 0, endurance = 0;
+int Game::run()
+{
 	while(!quit) {
 		erase();
 		mvprintw(0, 0, "Money: %d     Days left: %d", money, days_left);
@@ -247,7 +261,7 @@ int main()
 					mvprintw(0, 0, "Money: %d      ", money);
 					mvprintw(1, 0, "Strength: %d (%d to increase)", strength, strength_cost);
 					mvprintw(2, 0, "Endurance: %d (%d to increase)", endurance, endurance_cost);
-					mvprintw(3, 0, "Increase strength (a), increase endurance (2) or exit (space)");
+					mvprintw(3, 0, "Increase strength (a), increase endurance (b) or exit (space)");
 					int ch = getch();
 					switch(ch) {
 						case 'a':
@@ -288,13 +302,13 @@ int main()
 					answer = getch();
 				}
 				if(answer == 'y') {
-					if(fight(strength, endurance, enemy_count)) {
+					if(fight(enemy_count)) {
 						map.cell(player + shift) = '.';
 						player += shift;
 						money += 100 + rand() % 200 * enemy_count;
 
 						Chthon::Point piece = Chthon::Point(rand() % 5, rand() % 5);
-						tries = 625;
+						int tries = 625;
 						while(puzzle.cell(piece) && tries --> 0) {
 							piece = Chthon::Point(rand() % 5, rand() % 5);
 						}
@@ -316,10 +330,23 @@ int main()
 			map.cell(player) = '.';
 		}
 	}
+	return 0;
+}
 
+Game::~Game()
+{
 	cbreak();
 	echo();
 	curs_set(1);
 	endwin();
-	return 0;
+}
+
+int main()
+{
+	std::ofstream log_file("wted.log");
+	Chthon::direct_log(&log_file);
+	srand(time(NULL));
+
+	Game game;
+	return game.run();
 }
