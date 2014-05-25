@@ -10,17 +10,11 @@
 enum {
 	BATTLEFIELD_SIZE = 5,
 	BATTLE_FOREST_COUNT = 5,
-	BATTLE_MAP_X = 33,
-	BATTLE_MAP_Y = 11,
 	MAP_SIZE = 25,
 	PUZZLE_SIZE = 5,
 	PUZZLE_RADIUS = PUZZLE_SIZE / 2,
 	VIEW_SIZE = 5,
 	VIEW_RADIUS = VIEW_SIZE / 2,
-	VIEW_CENTER_X = 35,
-	VIEW_CENTER_Y = 13,
-	PUZZLE_CENTER_X = 65,
-	PUZZLE_CENTER_Y = 13,
 
 	PLAYER_BASE_HP = 10,
 	ENEMY_BASE_HP = 10,
@@ -34,6 +28,10 @@ enum {
 
 	COUNT
 };
+
+const Chthon::Point BATTLE_MAP(33, 11);
+const Chthon::Point VIEW_CENTER(35, 13);
+const Chthon::Point PUZZLE_CENTER(65, 13);
 
 struct Character {
 	Chthon::Point pos;
@@ -59,6 +57,8 @@ struct Cell {
 	{}
 };
 
+typedef int Sprite;
+
 template<class T, class Generator, class Check>
 T generate_value(int tries, Generator generator, Check check)
 {
@@ -75,6 +75,11 @@ Chthon::Point get_random_free_pos(const Chthon::Map<Cell> & map)
 			[](){ return Chthon::Point(rand() % MAP_SIZE, rand() % MAP_SIZE); },
 			[map](const Chthon::Point & p){ return map.cell(p).sprite == '.'; }
 			);
+}
+
+void draw_sprite(const Chthon::Point & start, const Chthon::Point & pos, const Sprite & sprite)
+{
+	mvaddch(start.y + pos.y, start.x + pos.x, sprite);
 }
 
 int fibonacci(int n)
@@ -115,7 +120,7 @@ private:
 	int money;
 	bool quit;
 	int strength, endurance;
-	std::map<char, int> sprites;
+	std::map<char, Sprite> sprites;
 
 	bool fight(int enemy_count);
 	void map_mode();
@@ -140,15 +145,15 @@ bool Game::fight(int enemy_count)
 		erase();
 		for(int x = 0; x < battlefield.width(); ++x) {
 			for(int y = 0; y < battlefield.height(); ++y) {
-				mvaddch(BATTLE_MAP_Y + y, BATTLE_MAP_X + x, sprites[battlefield.cell(x, y)]);
+				draw_sprite(BATTLE_MAP, Chthon::Point(x, y), sprites[battlefield.cell(x, y)]);
 			}
 		}
-		mvaddch(BATTLE_MAP_Y + player.pos.y, BATTLE_MAP_X + player.pos.x, sprites['@']);
+		draw_sprite(BATTLE_MAP, player.pos, sprites['@']);
 		for(const Character & enemy : enemies) {
-			mvaddch(BATTLE_MAP_Y + enemy.pos.y, BATTLE_MAP_X + enemy.pos.x, sprites['A']);
+			draw_sprite(BATTLE_MAP, enemy.pos, sprites['A']);
 		}
 		mvprintw(0, 0, "HP: %d", player.hp);
-		int start_line = std::max(int(fightlog.size()) - (BATTLE_MAP_Y - 1), 0);
+		int start_line = std::max(int(fightlog.size()) - (BATTLE_MAP.y - 1), 0);
 		for(int i = start_line; i < fightlog.size(); ++i) {
 			mvprintw(1 + i - start_line, 0, "%s", fightlog[i].c_str());
 		}
@@ -333,15 +338,15 @@ int Game::run()
 					sprite = map.cell(pos).sprite;
 					map.cell(pos).seen = true;
 				}
-				mvaddch(VIEW_CENTER_Y + y, VIEW_CENTER_X + x, sprites[sprite]);
+				draw_sprite(VIEW_CENTER, Chthon::Point(x, y), sprites[sprite]);
 				for(const Evil & e : evil) {
 					if(e.pos == pos) {
-						mvaddch(VIEW_CENTER_Y + y, VIEW_CENTER_X + x, sprites['A']);
+						draw_sprite(VIEW_CENTER, Chthon::Point(x, y), sprites['A']);
 					}
 				}
 			}
 		}
-		mvaddch(VIEW_CENTER_Y, VIEW_CENTER_X, sprites['@']);
+		draw_sprite(VIEW_CENTER, Chthon::Point(), sprites['@']);
 
 		for(int x = -PUZZLE_RADIUS; x <= PUZZLE_RADIUS; ++x) {
 			for(int y = -PUZZLE_RADIUS; y <= PUZZLE_RADIUS; ++y) {
@@ -350,10 +355,10 @@ int Game::run()
 				if(map.valid(pos) && puzzle.cell(x + PUZZLE_RADIUS, y + PUZZLE_RADIUS)) {
 					sprite = map.cell(pos).sprite;
 				}
-				mvaddch(PUZZLE_CENTER_Y + y, PUZZLE_CENTER_X + x, sprites[sprite]);
+				mvaddch(PUZZLE_CENTER.y + y, PUZZLE_CENTER.x + x, sprites[sprite]);
 			}
 		}
-		mvaddch(PUZZLE_CENTER_Y, PUZZLE_CENTER_X, sprites['X']);
+		mvaddch(PUZZLE_CENTER.y, PUZZLE_CENTER.x, sprites['X']);
 
 		char control = getch();
 		Chthon::Point shift = get_shift(control);;
