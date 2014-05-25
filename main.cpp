@@ -70,6 +70,7 @@ Chthon::Point get_shift(int control)
 		case 'u' : return Chthon::Point( 1, -1);
 		case 'b' : return Chthon::Point(-1,  1);
 		case 'n' : return Chthon::Point( 1,  1);
+		default: return Chthon::Point();
 	}
 }
 
