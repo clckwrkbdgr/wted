@@ -43,6 +43,13 @@ struct Character {
 	{}
 };
 
+struct Evil {
+	Chthon::Point pos;
+	Evil(const Chthon::Point & evil_pos = Chthon::Point())
+		: pos(evil_pos)
+	{}
+};
+
 struct Cell {
 	char sprite;
 	bool seen;
@@ -59,6 +66,14 @@ T generate_value(int tries, Generator generator, Check check)
 		value = generator();
 	}
 	return value;
+}
+
+Chthon::Point get_random_free_pos(const Chthon::Map<Cell> & map)
+{
+	return generate_value<Chthon::Point>(MAP_SIZE * MAP_SIZE,
+			[](){ return Chthon::Point(rand() % MAP_SIZE, rand() % MAP_SIZE); },
+			[map](const Chthon::Point & p){ return map.cell(p).sprite == '.'; }
+			);
 }
 
 int fibonacci(int n)
@@ -94,6 +109,7 @@ private:
 	Chthon::Map<Cell> map;
 	Chthon::Point player, artifact;
 	Chthon::Map<char> puzzle;
+	std::list<Evil> evil;
 	int days_left;
 	int money;
 	bool quit;
@@ -286,17 +302,13 @@ Game::Game()
 	for(int i = 0; i < MAP_SIZE * MAP_SIZE * 2 / 5; ++i) {
 		map.cell(rand() % MAP_SIZE, rand() % MAP_SIZE) = '#';
 	}
+	player = get_random_free_pos(map);
 	for(int i = 0; i < MAP_SIZE; ++i) {
-		map.cell(rand() % MAP_SIZE, rand() % MAP_SIZE) = '*';
+		map.cell(get_random_free_pos(map)) = '*';
 	}
 	for(int i = 0; i < PUZZLE_SIZE * PUZZLE_SIZE; ++i) {
-		map.cell(rand() % MAP_SIZE, rand() % MAP_SIZE) = 'A';
+		evil.push_back(Evil(get_random_free_pos(map)));
 	}
-
-	player = generate_value<Chthon::Point>(MAP_SIZE * MAP_SIZE,
-			[](){ return Chthon::Point(rand() % MAP_SIZE, rand() % MAP_SIZE); },
-			[this](const Chthon::Point & p){ return this->map.cell(p).sprite != '#'; }
-			);
 
 	artifact = generate_value<Chthon::Point>(MAP_SIZE * MAP_SIZE,
 			[](){ return Chthon::Point(
@@ -321,6 +333,11 @@ int Game::run()
 					map.cell(pos).seen = true;
 				}
 				mvaddch(VIEW_CENTER_Y + y, VIEW_CENTER_X + x, sprites[sprite]);
+				for(const Evil & e : evil) {
+					if(e.pos == pos) {
+						mvaddch(VIEW_CENTER_Y + y, VIEW_CENTER_X + x, sprites['A']);
+					}
+				}
 			}
 		}
 		mvaddch(VIEW_CENTER_Y, VIEW_CENTER_X, sprites['@']);
@@ -352,7 +369,12 @@ int Game::run()
 			}
 		}
 		if(!shift.null() && map.valid(player + shift) && map.cell(player + shift).sprite != '#') {
-			if(map.cell(player + shift).sprite == 'A') {
+			Chthon::Point new_player_pos = player + shift;
+			std::list<Evil>::iterator e;
+			e = std::find_if(evil.begin(), evil.end(),
+					[new_player_pos](const Evil & e) { return e.pos == new_player_pos; }
+					);
+			if(e != evil.end()) {
 				int enemy_count = 1 + rand() % MAX_ENEMY_COUNT;
 				mvprintw(17, 0, "There are %d enemies. Do you want to fight them? (y/n)", enemy_count);
 				int answer = 0;
@@ -361,13 +383,13 @@ int Game::run()
 				}
 				if(answer == 'y') {
 					if(fight(enemy_count)) {
-						map.cell(player + shift) = '.';
+						evil.erase(e);
 						player += shift;
 						money += BASE_MONEY_FOR_BATTLE + rand() % MAX_MONEY_FOR_ONE_ENEMY * enemy_count;
 
-						piece = generate_value<Chthon::Point>(PUZZLE_SIZE * PUZZLE_SIZE,
+						Chthon::Point piece = generate_value<Chthon::Point>(PUZZLE_SIZE * PUZZLE_SIZE,
 								[](){ return Chthon::Point(rand() % PUZZLE_SIZE, rand() % PUZZLE_SIZE); },
-								[this](const Chthon::Point & p){ return !this->puzzle.cell(p).sprite; }
+								[this](const Chthon::Point & p){ return !this->puzzle.cell(p); }
 								);
 						puzzle.cell(piece) = 1;
 					} else {
