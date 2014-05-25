@@ -45,8 +45,9 @@ struct Character {
 
 struct Evil {
 	Chthon::Point pos;
-	Evil(const Chthon::Point & evil_pos = Chthon::Point())
-		: pos(evil_pos)
+	int count;
+	Evil(const Chthon::Point & evil_pos = Chthon::Point(), int evil_count = 1)
+		: pos(evil_pos), count(evil_count)
 	{}
 };
 
@@ -307,7 +308,7 @@ Game::Game()
 		map.cell(get_random_free_pos(map)) = '*';
 	}
 	for(int i = 0; i < PUZZLE_SIZE * PUZZLE_SIZE; ++i) {
-		evil.push_back(Evil(get_random_free_pos(map)));
+		evil.push_back(Evil(get_random_free_pos(map), 1 + rand() % MAX_ENEMY_COUNT));
 	}
 
 	artifact = generate_value<Chthon::Point>(MAP_SIZE * MAP_SIZE,
@@ -375,17 +376,16 @@ int Game::run()
 					[new_player_pos](const Evil & e) { return e.pos == new_player_pos; }
 					);
 			if(e != evil.end()) {
-				int enemy_count = 1 + rand() % MAX_ENEMY_COUNT;
-				mvprintw(17, 0, "There are %d enemies. Do you want to fight them? (y/n)", enemy_count);
+				mvprintw(17, 0, "There are %d enemies. Do you want to fight them? (y/n)", e->count);
 				int answer = 0;
 				while(answer != 'y' && answer != 'n') {
 					answer = getch();
 				}
 				if(answer == 'y') {
-					if(fight(enemy_count)) {
+					if(fight(e->count)) {
 						evil.erase(e);
 						player += shift;
-						money += BASE_MONEY_FOR_BATTLE + rand() % MAX_MONEY_FOR_ONE_ENEMY * enemy_count;
+						money += BASE_MONEY_FOR_BATTLE + rand() % MAX_MONEY_FOR_ONE_ENEMY * e->count;
 
 						Chthon::Point piece = generate_value<Chthon::Point>(PUZZLE_SIZE * PUZZLE_SIZE,
 								[](){ return Chthon::Point(rand() % PUZZLE_SIZE, rand() % PUZZLE_SIZE); },
