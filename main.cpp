@@ -7,6 +7,34 @@
 #include <fstream>
 #include <cstdlib>
 
+enum {
+	BATTLEFIELD_SIZE = 5,
+	BATTLE_FOREST_COUNT = 5,
+	BATTLE_MAP_X = 33,
+	BATTLE_MAP_Y = 11,
+	MAP_SIZE = 25,
+	PUZZLE_SIZE = 5,
+	PUZZLE_RADIUS = PUZZLE_SIZE / 2,
+	VIEW_SIZE = 5,
+	VIEW_RADIUS = VIEW_SIZE / 2,
+	VIEW_CENTER_X = 35,
+	VIEW_CENTER_Y = 13,
+	PUZZLE_CENTER_X = 65,
+	PUZZLE_CENTER_Y = 13,
+
+	PLAYER_BASE_HP = 10,
+	ENEMY_BASE_HP = 10,
+	PLAYER_DAMAGE_RANGE = 3,
+	ENEMY_DAMAGE_RANGE = 3,
+	DAYS_LEFT = 300,
+	MAX_ENEMY_COUNT = 3,
+	BASE_MONEY_FOR_BATTLE = 100,
+	MAX_MONEY_FOR_ONE_ENEMY = 200,
+	TREASURE_MONEY = 100,
+
+	COUNT
+};
+
 struct Character {
 	Chthon::Point pos;
 	int hp;
@@ -68,30 +96,30 @@ private:
 bool Game::fight(int enemy_count)
 {
 	bool done = false;
-	Chthon::Map<char> battlefield(5, 5, '.');
-	int forest_count = rand() % 5;
+	Chthon::Map<char> battlefield(BATTLEFIELD_SIZE, BATTLEFIELD_SIZE, '.');
+	int forest_count = rand() % BATTLE_FOREST_COUNT;
 	for(int i = 0; i < forest_count; ++i) {
-		battlefield.cell(1 + rand() % 3, rand() % 5) = '#';
+		battlefield.cell(1 + rand() % (BATTLEFIELD_SIZE - 2), rand() % BATTLEFIELD_SIZE) = '#';
 	}
-	Character player({0, 2}, 10 + endurance);
+	Character player({0, BATTLEFIELD_SIZE / 2}, PLAYER_BASE_HP + endurance);
 	std::vector<Character> enemies;
 	for(int i = 0; i < enemy_count; ++i) {
-		enemies << Character({4, (3 - enemy_count) + i * 2}, 10);
+		enemies << Character({BATTLEFIELD_SIZE - 1, (BATTLEFIELD_SIZE / 2 + 1 - enemy_count) + i * 2}, ENEMY_BASE_HP);
 	}
 	std::vector<std::string> fightlog;
 	while(!done) {
 		erase();
 		for(int x = 0; x < battlefield.width(); ++x) {
 			for(int y = 0; y < battlefield.height(); ++y) {
-				mvaddch(11 + y, 33 + x, battlefield.cell(x, y));
+				mvaddch(BATTLE_MAP_Y + y, BATTLE_MAP_X + x, battlefield.cell(x, y));
 			}
 		}
-		mvaddch(11 + player.pos.y, 33 + player.pos.x, '@');
+		mvaddch(BATTLE_MAP_Y + player.pos.y, BATTLE_MAP_X + player.pos.x, '@');
 		for(const Character & enemy : enemies) {
-			mvaddch(11 + enemy.pos.y, 33 + enemy.pos.x, 'A');
+			mvaddch(BATTLE_MAP_Y + enemy.pos.y, BATTLE_MAP_X + enemy.pos.x, 'A');
 		}
 		mvprintw(0, 0, "HP: %d", player.hp);
-		int start_line = std::max(int(fightlog.size()) - 10, 0);
+		int start_line = std::max(int(fightlog.size()) - (BATTLE_MAP_Y - 1), 0);
 		for(int i = start_line; i < fightlog.size(); ++i) {
 			mvprintw(1 + i - start_line, 0, "%s", fightlog[i].c_str());
 		}
@@ -114,7 +142,7 @@ bool Game::fight(int enemy_count)
 		bool fought = false;
 		for(Character & enemy : enemies) {
 			if(player.pos + shift == enemy.pos && enemy.hp > 0) {
-				int damage = strength + rand() % 3;
+				int damage = strength + rand() % PLAYER_DAMAGE_RANGE;
 				enemy.hp -= damage;
 				fightlog << Chthon::format("You hit enemy for {0} hp.", damage);
 				if(enemy.hp <= 0) {
@@ -150,7 +178,7 @@ bool Game::fight(int enemy_count)
 			if(ok) {
 				Chthon::Point new_pos = enemy.pos + finder.directions.front();
 				if(new_pos == player.pos) {
-					int damage = rand() % 2;
+					int damage = rand() % ENEMY_DAMAGE_RANGE;
 					player.hp -= damage;
 					fightlog << Chthon::format("Enemy hit you for {0} hp.", damage);
 					if(player.hp <= 0) {
@@ -219,8 +247,8 @@ void Game::character_mode()
 }
 
 Game::Game()
-	: map(25, 25, '.'), puzzle(5, 5, 0),
-	days_left(300), money(0), quit(false), strength(0), endurance(0)
+	: map(MAP_SIZE, MAP_SIZE, '.'), puzzle(PUZZLE_SIZE, PUZZLE_SIZE, 0),
+	days_left(DAYS_LEFT), money(0), quit(false), strength(0), endurance(0)
 {
 	initscr();
 	raw();
@@ -228,26 +256,32 @@ Game::Game()
 	noecho();
 	curs_set(0);
 
-	for(int i = 0; i < 250; ++i) {
-		map.cell(rand() % 25, rand() % 25) = '#';
+	for(int i = 0; i < MAP_SIZE * MAP_SIZE * 2 / 5; ++i) {
+		map.cell(rand() % MAP_SIZE, rand() % MAP_SIZE) = '#';
 	}
-	for(int i = 0; i < 25; ++i) {
-		map.cell(rand() % 25, rand() % 25) = '*';
+	for(int i = 0; i < MAP_SIZE; ++i) {
+		map.cell(rand() % MAP_SIZE, rand() % MAP_SIZE) = '*';
 	}
-	for(int i = 0; i < 25; ++i) {
-		map.cell(rand() % 25, rand() % 25) = 'A';
+	for(int i = 0; i < PUZZLE_SIZE * PUZZLE_SIZE; ++i) {
+		map.cell(rand() % MAP_SIZE, rand() % MAP_SIZE) = 'A';
 	}
 
-	player = Chthon::Point(rand() % 25, rand() % 25);
-	int tries = 625;
+	player = Chthon::Point(rand() % MAP_SIZE, rand() % MAP_SIZE);
+	int tries = MAP_SIZE * MAP_SIZE;
 	while(map.cell(player).sprite == '#' && tries --> 0) {
-		player = Chthon::Point(rand() % 25, rand() % 25);
+		player = Chthon::Point(rand() % MAP_SIZE, rand() % MAP_SIZE);
 	}
 
-	artifact = Chthon::Point(2 + rand() % 21, 2 + rand() % 21);
-	tries = 625;
+	artifact = Chthon::Point(
+			PUZZLE_SIZE / 2 + rand() % (MAP_SIZE - PUZZLE_SIZE / 2),
+			PUZZLE_SIZE / 2 + rand() % (MAP_SIZE - PUZZLE_SIZE / 2)
+			);
+	tries = MAP_SIZE * MAP_SIZE;
 	while(map.cell(artifact).sprite == '#' && tries --> 0) {
-		artifact = Chthon::Point(2 + rand() % 21, 2 + rand() % 21);
+		artifact = Chthon::Point(
+				PUZZLE_SIZE / 2 + rand() % (MAP_SIZE - PUZZLE_SIZE / 2),
+				PUZZLE_SIZE / 2 + rand() % (MAP_SIZE - PUZZLE_SIZE / 2)
+				);
 	}
 }
 
@@ -256,30 +290,30 @@ int Game::run()
 	while(!quit) {
 		erase();
 		mvprintw(0, 0, "Money: %d     Days left: %d", money, days_left);
-		for(int x = -2; x <= 2; ++x) {
-			for(int y = -2; y <= 2; ++y) {
+		for(int x = -VIEW_RADIUS; x <= VIEW_RADIUS; ++x) {
+			for(int y = -VIEW_RADIUS; y <= VIEW_RADIUS; ++y) {
 				Chthon::Point pos = player + Chthon::Point(x, y);
 				if(map.valid(pos)) {
-					mvaddch(13 + y, 35 + x, map.cell(pos).sprite);
+					mvaddch(VIEW_CENTER_Y + y, VIEW_CENTER_X + x, map.cell(pos).sprite);
 					map.cell(pos).seen = true;
 				} else {
-					mvaddch(13 + y, 35 + x, ' ');
+					mvaddch(VIEW_CENTER_Y + y, VIEW_CENTER_X + x, ' ');
 				}
 			}
 		}
-		mvaddch(13, 35, '@');
+		mvaddch(VIEW_CENTER_Y, VIEW_CENTER_X, '@');
 
-		for(int x = -2; x <= 2; ++x) {
-			for(int y = -2; y <= 2; ++y) {
+		for(int x = -PUZZLE_RADIUS; x <= PUZZLE_RADIUS; ++x) {
+			for(int y = -PUZZLE_RADIUS; y <= PUZZLE_RADIUS; ++y) {
 				Chthon::Point pos = artifact + Chthon::Point(x, y);
-				if(map.valid(pos) && puzzle.cell(x + 2, y + 2)) {
-					mvaddch(13 + y, 65 + x, map.cell(pos).sprite);
+				if(map.valid(pos) && puzzle.cell(x + PUZZLE_RADIUS, y + PUZZLE_RADIUS)) {
+					mvaddch(PUZZLE_CENTER_Y + y, PUZZLE_CENTER_X + x, map.cell(pos).sprite);
 				} else {
-					mvaddch(13 + y, 65 + x, ' ');
+					mvaddch(PUZZLE_CENTER_Y + y, PUZZLE_CENTER_X + x, ' ');
 				}
 			}
 		}
-		mvaddch(13, 65, 'X');
+		mvaddch(PUZZLE_CENTER_Y, PUZZLE_CENTER_X, 'X');
 
 		char control = getch();
 		Chthon::Point shift = get_shift(control);;
@@ -297,7 +331,7 @@ int Game::run()
 		}
 		if(!shift.null() && map.valid(player + shift) && map.cell(player + shift).sprite != '#') {
 			if(map.cell(player + shift).sprite == 'A') {
-				int enemy_count = 1 + rand() % 3;
+				int enemy_count = 1 + rand() % MAX_ENEMY_COUNT;
 				mvprintw(17, 0, "There are %d enemies. Do you want to fight them? (y/n)", enemy_count);
 				int answer = 0;
 				while(answer != 'y' && answer != 'n') {
@@ -307,12 +341,12 @@ int Game::run()
 					if(fight(enemy_count)) {
 						map.cell(player + shift) = '.';
 						player += shift;
-						money += 100 + rand() % 200 * enemy_count;
+						money += BASE_MONEY_FOR_BATTLE + rand() % MAX_MONEY_FOR_ONE_ENEMY * enemy_count;
 
-						Chthon::Point piece = Chthon::Point(rand() % 5, rand() % 5);
-						int tries = 625;
+						Chthon::Point piece = Chthon::Point(rand() % PUZZLE_SIZE, rand() % PUZZLE_SIZE);
+						int tries = PUZZLE_SIZE * PUZZLE_SIZE;
 						while(puzzle.cell(piece) && tries --> 0) {
-							piece = Chthon::Point(rand() % 5, rand() % 5);
+							piece = Chthon::Point(rand() % PUZZLE_SIZE, rand() % PUZZLE_SIZE);
 						}
 						puzzle.cell(piece) = 1;
 					} else {
@@ -328,7 +362,7 @@ int Game::run()
 			}
 		}
 		if(map.cell(player).sprite == '*') {
-			money += 100;
+			money += TREASURE_MONEY;
 			map.cell(player) = '.';
 		}
 	}
