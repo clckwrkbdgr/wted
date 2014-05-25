@@ -51,6 +51,16 @@ struct Cell {
 	{}
 };
 
+template<class T, class Generator, class Check>
+T generate_value(int tries, Generator generator, Check check)
+{
+	T value = generator();
+	while(!check(value) && tries --> 0) {
+		value = generator();
+	}
+	return value;
+}
+
 int fibonacci(int n)
 {
 	if(n <= 1) {
@@ -283,23 +293,18 @@ Game::Game()
 		map.cell(rand() % MAP_SIZE, rand() % MAP_SIZE) = 'A';
 	}
 
-	player = Chthon::Point(rand() % MAP_SIZE, rand() % MAP_SIZE);
-	int tries = MAP_SIZE * MAP_SIZE;
-	while(map.cell(player).sprite == '#' && tries --> 0) {
-		player = Chthon::Point(rand() % MAP_SIZE, rand() % MAP_SIZE);
-	}
-
-	artifact = Chthon::Point(
-			PUZZLE_SIZE / 2 + rand() % (MAP_SIZE - PUZZLE_SIZE / 2),
-			PUZZLE_SIZE / 2 + rand() % (MAP_SIZE - PUZZLE_SIZE / 2)
+	player = generate_value<Chthon::Point>(MAP_SIZE * MAP_SIZE,
+			[](){ return Chthon::Point(rand() % MAP_SIZE, rand() % MAP_SIZE); },
+			[this](const Chthon::Point & p){ return this->map.cell(p).sprite != '#'; }
 			);
-	tries = MAP_SIZE * MAP_SIZE;
-	while(map.cell(artifact).sprite == '#' && tries --> 0) {
-		artifact = Chthon::Point(
+
+	artifact = generate_value<Chthon::Point>(MAP_SIZE * MAP_SIZE,
+			[](){ return Chthon::Point(
 				PUZZLE_SIZE / 2 + rand() % (MAP_SIZE - PUZZLE_SIZE / 2),
 				PUZZLE_SIZE / 2 + rand() % (MAP_SIZE - PUZZLE_SIZE / 2)
-				);
-	}
+			); },
+			[this](const Chthon::Point & p){ return this->map.cell(p).sprite != '#'; }
+			);
 }
 
 int Game::run()
@@ -360,11 +365,10 @@ int Game::run()
 						player += shift;
 						money += BASE_MONEY_FOR_BATTLE + rand() % MAX_MONEY_FOR_ONE_ENEMY * enemy_count;
 
-						Chthon::Point piece = Chthon::Point(rand() % PUZZLE_SIZE, rand() % PUZZLE_SIZE);
-						int tries = PUZZLE_SIZE * PUZZLE_SIZE;
-						while(puzzle.cell(piece) && tries --> 0) {
-							piece = Chthon::Point(rand() % PUZZLE_SIZE, rand() % PUZZLE_SIZE);
-						}
+						piece = generate_value<Chthon::Point>(PUZZLE_SIZE * PUZZLE_SIZE,
+								[](){ return Chthon::Point(rand() % PUZZLE_SIZE, rand() % PUZZLE_SIZE); },
+								[this](const Chthon::Point & p){ return !this->puzzle.cell(p).sprite; }
+								);
 						puzzle.cell(piece) = 1;
 					} else {
 						quit = true;
