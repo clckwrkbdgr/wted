@@ -88,6 +88,7 @@ private:
 	int money;
 	bool quit;
 	int strength, endurance;
+	std::map<char, int> sprites;
 
 	bool fight(int enemy_count);
 	void map_mode();
@@ -112,12 +113,12 @@ bool Game::fight(int enemy_count)
 		erase();
 		for(int x = 0; x < battlefield.width(); ++x) {
 			for(int y = 0; y < battlefield.height(); ++y) {
-				mvaddch(BATTLE_MAP_Y + y, BATTLE_MAP_X + x, battlefield.cell(x, y));
+				mvaddch(BATTLE_MAP_Y + y, BATTLE_MAP_X + x, sprites[battlefield.cell(x, y)]);
 			}
 		}
-		mvaddch(BATTLE_MAP_Y + player.pos.y, BATTLE_MAP_X + player.pos.x, '@');
+		mvaddch(BATTLE_MAP_Y + player.pos.y, BATTLE_MAP_X + player.pos.x, sprites['@']);
 		for(const Character & enemy : enemies) {
-			mvaddch(BATTLE_MAP_Y + enemy.pos.y, BATTLE_MAP_X + enemy.pos.x, 'A');
+			mvaddch(BATTLE_MAP_Y + enemy.pos.y, BATTLE_MAP_X + enemy.pos.x, sprites['A']);
 		}
 		mvprintw(0, 0, "HP: %d", player.hp);
 		int start_line = std::max(int(fightlog.size()) - (BATTLE_MAP_Y - 1), 0);
@@ -206,11 +207,11 @@ void Game::map_mode()
 	for(int x = 0; x < map.width(); ++x) {
 		for(int y = 0; y < map.height(); ++y) {
 			if(map.cell(x, y).seen) {
-				mvaddch(y, x, map.cell(x, y).sprite);
+				mvaddch(y, x, sprites[map.cell(x, y).sprite]);
 			}
 		}
 	}
-	mvaddch(player.y, player.x, '@');
+	mvaddch(player.y, player.x, sprites['@']);
 	while(getch() != 'm');
 }
 
@@ -255,7 +256,22 @@ Game::Game()
 	raw();
 	keypad(stdscr, TRUE);
 	noecho();
+	start_color();
 	curs_set(0);
+
+
+	init_pair(1, COLOR_GREEN, COLOR_BLACK);
+	init_pair(2, COLOR_WHITE, COLOR_BLACK);
+	init_pair(3, COLOR_RED, COLOR_BLACK);
+	init_pair(4, COLOR_YELLOW, COLOR_BLACK);
+	sprites[' '] = ' ';
+	sprites['.'] = '"' | COLOR_PAIR(1);
+	sprites['#'] = '#' | COLOR_PAIR(1) | A_BOLD;
+	sprites['@'] = '@' | COLOR_PAIR(2) | A_BOLD;
+	sprites['A'] = 'A' | COLOR_PAIR(3) | A_BOLD;
+	sprites['*'] = '*' | COLOR_PAIR(4) | A_BOLD;
+	sprites['X'] = 'X' | COLOR_PAIR(2) | A_BOLD;
+
 
 	for(int i = 0; i < MAP_SIZE * MAP_SIZE * 2 / 5; ++i) {
 		map.cell(rand() % MAP_SIZE, rand() % MAP_SIZE) = '#';
@@ -294,27 +310,27 @@ int Game::run()
 		for(int x = -VIEW_RADIUS; x <= VIEW_RADIUS; ++x) {
 			for(int y = -VIEW_RADIUS; y <= VIEW_RADIUS; ++y) {
 				Chthon::Point pos = player + Chthon::Point(x, y);
+				int sprite = ' ';
 				if(map.valid(pos)) {
-					mvaddch(VIEW_CENTER_Y + y, VIEW_CENTER_X + x, map.cell(pos).sprite);
+					sprite = map.cell(pos).sprite;
 					map.cell(pos).seen = true;
-				} else {
-					mvaddch(VIEW_CENTER_Y + y, VIEW_CENTER_X + x, ' ');
 				}
+				mvaddch(VIEW_CENTER_Y + y, VIEW_CENTER_X + x, sprites[sprite]);
 			}
 		}
-		mvaddch(VIEW_CENTER_Y, VIEW_CENTER_X, '@');
+		mvaddch(VIEW_CENTER_Y, VIEW_CENTER_X, sprites['@']);
 
 		for(int x = -PUZZLE_RADIUS; x <= PUZZLE_RADIUS; ++x) {
 			for(int y = -PUZZLE_RADIUS; y <= PUZZLE_RADIUS; ++y) {
 				Chthon::Point pos = artifact + Chthon::Point(x, y);
+				int sprite = ' ';
 				if(map.valid(pos) && puzzle.cell(x + PUZZLE_RADIUS, y + PUZZLE_RADIUS)) {
-					mvaddch(PUZZLE_CENTER_Y + y, PUZZLE_CENTER_X + x, map.cell(pos).sprite);
-				} else {
-					mvaddch(PUZZLE_CENTER_Y + y, PUZZLE_CENTER_X + x, ' ');
+					sprite = map.cell(pos).sprite;
 				}
+				mvaddch(PUZZLE_CENTER_Y + y, PUZZLE_CENTER_X + x, sprites[sprite]);
 			}
 		}
-		mvaddch(PUZZLE_CENTER_Y, PUZZLE_CENTER_X, 'X');
+		mvaddch(PUZZLE_CENTER_Y, PUZZLE_CENTER_X, sprites['X']);
 
 		char control = getch();
 		Chthon::Point shift = get_shift(control);;
