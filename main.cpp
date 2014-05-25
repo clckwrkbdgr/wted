@@ -31,6 +31,20 @@ int fibonacci(int n)
 	return fibonacci(n - 1) + fibonacci(n - 2);
 }
 
+Chthon::Point get_shift(int control)
+{
+	switch(control) {
+		case 'h' : return Chthon::Point(-1,  0);
+		case 'j' : return Chthon::Point( 0,  1);
+		case 'k' : return Chthon::Point( 0, -1);
+		case 'l' : return Chthon::Point( 1,  0);
+		case 'y' : return Chthon::Point(-1, -1);
+		case 'u' : return Chthon::Point( 1, -1);
+		case 'b' : return Chthon::Point(-1,  1);
+		case 'n' : return Chthon::Point( 1,  1);
+	}
+}
+
 class Game {
 public:
 	Game();
@@ -47,6 +61,8 @@ private:
 	int strength, endurance;
 
 	bool fight(int enemy_count);
+	void map_mode();
+	void character_mode();
 };
 
 bool Game::fight(int enemy_count)
@@ -83,16 +99,9 @@ bool Game::fight(int enemy_count)
 		Chthon::Point shift;
 		while(true) {
 			char control = getch();
+			shift = get_shift(control);
 			switch(control) {
 				case 'q' : return false;
-				case 'h' : shift = Chthon::Point(-1,  0); break;
-				case 'j' : shift = Chthon::Point( 0,  1); break;
-				case 'k' : shift = Chthon::Point( 0, -1); break;
-				case 'l' : shift = Chthon::Point( 1,  0); break;
-				case 'y' : shift = Chthon::Point(-1, -1); break;
-				case 'u' : shift = Chthon::Point( 1, -1); break;
-				case 'b' : shift = Chthon::Point(-1,  1); break;
-				case 'n' : shift = Chthon::Point( 1,  1); break;
 			}
 			bool choice_made = !shift.null();
 			bool valid_pos = battlefield.valid(player.pos + shift);
@@ -162,6 +171,53 @@ bool Game::fight(int enemy_count)
 	return true;
 }
 
+void Game::map_mode()
+{
+	erase();
+	for(int x = 0; x < map.width(); ++x) {
+		for(int y = 0; y < map.height(); ++y) {
+			if(map.cell(x, y).seen) {
+				mvaddch(y, x, map.cell(x, y).sprite);
+			}
+		}
+	}
+	mvaddch(player.y, player.x, '@');
+	while(getch() != 'm');
+}
+
+void Game::character_mode()
+{
+	erase();
+	while(true) {
+		int strength_cost = fibonacci(strength + 1) * 100;
+		int endurance_cost = fibonacci(endurance + 1) * 100;
+		mvprintw(0, 0, "Money: %d      ", money);
+		mvprintw(1, 0, "Strength: %d (%d to increase)", strength, strength_cost);
+		mvprintw(2, 0, "Endurance: %d (%d to increase)", endurance, endurance_cost);
+		mvprintw(3, 0, "Increase strength (a), increase endurance (b) or exit (space)");
+		int ch = getch();
+		switch(ch) {
+			case 'a':
+				if(money >= strength_cost) {
+					++strength;
+					money -= strength_cost;
+				} else {
+					mvprintw(4, 0, "Not enough money to increase strength! ");
+				}
+				break;
+			case 'b':
+				if(money >= endurance_cost) {
+					++endurance;
+					money -= endurance_cost;
+				} else {
+					mvprintw(4, 0, "Not enough money to increase endurance!");
+				}
+				break;
+			case ' ': case 'c': return;
+		}
+	}
+}
+
 Game::Game()
 	: map(25, 25, '.'), puzzle(5, 5, 0),
 	days_left(300), money(0), quit(false), strength(0), endurance(0)
@@ -226,65 +282,11 @@ int Game::run()
 		mvaddch(13, 65, 'X');
 
 		char control = getch();
-		Chthon::Point shift;
+		Chthon::Point shift = get_shift(control);;
 		switch(control) {
 			case 'q' : quit = true; break;
-			case 'h' : shift = Chthon::Point(-1,  0); break;
-			case 'j' : shift = Chthon::Point( 0,  1); break;
-			case 'k' : shift = Chthon::Point( 0, -1); break;
-			case 'l' : shift = Chthon::Point( 1,  0); break;
-			case 'y' : shift = Chthon::Point(-1, -1); break;
-			case 'u' : shift = Chthon::Point( 1, -1); break;
-			case 'b' : shift = Chthon::Point(-1,  1); break;
-			case 'n' : shift = Chthon::Point( 1,  1); break;
-			case 'm' :
-			{
-				erase();
-				for(int x = 0; x < map.width(); ++x) {
-					for(int y = 0; y < map.height(); ++y) {
-						if(map.cell(x, y).seen) {
-							mvaddch(y, x, map.cell(x, y).sprite);
-						}
-					}
-				}
-				mvaddch(player.y, player.x, '@');
-				while(getch() != 'm');
-				break;
-			}
-			case 'c':
-			{
-				erase();
-				bool done = false;
-				while(!done) {
-					int strength_cost = fibonacci(strength + 1) * 100;
-					int endurance_cost = fibonacci(endurance + 1) * 100;
-					mvprintw(0, 0, "Money: %d      ", money);
-					mvprintw(1, 0, "Strength: %d (%d to increase)", strength, strength_cost);
-					mvprintw(2, 0, "Endurance: %d (%d to increase)", endurance, endurance_cost);
-					mvprintw(3, 0, "Increase strength (a), increase endurance (b) or exit (space)");
-					int ch = getch();
-					switch(ch) {
-						case 'a':
-							if(money >= strength_cost) {
-								++strength;
-								money -= strength_cost;
-							} else {
-								mvprintw(4, 0, "Not enough money to increase strength! ");
-							}
-							break;
-						case 'b':
-							if(money >= endurance_cost) {
-								++endurance;
-								money -= endurance_cost;
-							} else {
-								mvprintw(4, 0, "Not enough money to increase endurance!");
-							}
-							break;
-						case ' ': done = true; break;
-					}
-				}
-				break;
-			}
+			case 'm' : map_mode(); break;
+			case 'c' : character_mode(); break;
 			case 'd':
 			{
 				if(player == artifact) {
