@@ -253,14 +253,15 @@ bool Game::fight(int enemy_count)
 void Game::map_mode()
 {
 	erase();
+	int shift = (80 - map.width()) / 2;
 	for(int x = 0; x < map.width(); ++x) {
 		for(int y = 0; y < map.height(); ++y) {
 			if(map.cell(x, y).seen) {
-				mvaddch(y, x, minisprites[map.cell(x, y).sprite]);
+				mvaddch(y, shift + x, minisprites[map.cell(x, y).sprite]);
 			}
 		}
 	}
-	mvaddch(player.y, player.x, minisprites['@']);
+	mvaddch(player.y, shift + player.x, minisprites['@']);
 	while(getch() != 'm');
 }
 
@@ -387,10 +388,10 @@ Game::Game()
 		"|                                           |"
 		"|                                           |"
 		"|                                           |"
-		"|                                           |"
 		"+===========================================+"
 		"|                                           |"
 		"| (hjklyubn) Move                           |"
+		"| (q) Surrender and quit the game           |"
 		"|                                           |"
 		"| Walk onto enemy to fight with them.       |"
 		"| Use natural obstacles to fight enemies    |"
