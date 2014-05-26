@@ -414,7 +414,11 @@ int Game::run()
 					[new_player_pos](const Evil & e) { return e.pos == new_player_pos; }
 					);
 			if(e != evil.end()) {
-				mvprintw(17, 0, "There are %d enemies. Do you want to fight them? (y/n)", e->count);
+				mvprintw(11, 25, "+----------------------------+");
+				mvprintw(12, 25, "|    There are %d enemies     |", e->count);
+				mvprintw(13, 25, "| Do you want to fight them? |");
+				mvprintw(14, 25, "|           (y/n)            |");
+				mvprintw(15, 25, "+----------------------------+");
 				int answer = 0;
 				while(answer != 'y' && answer != 'n') {
 					answer = getch();
