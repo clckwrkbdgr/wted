@@ -15,7 +15,7 @@ enum {
 	PUZZLE_RADIUS = PUZZLE_SIZE / 2,
 	VIEW_SIZE = 5,
 	VIEW_RADIUS = VIEW_SIZE / 2,
-	LEFT_STATUS_BAR = VIEW_SIZE * 7,
+	LEFT_STATUS_BAR = VIEW_SIZE * 9,
 	FIGHTLOG_SIZE = 10,
 
 	PLAYER_BASE_HP = 10,
@@ -33,7 +33,7 @@ enum {
 
 const Chthon::Point BATTLE_MAP(0, 0);
 const Chthon::Point VIEW_MAP(0, 0);
-const Chthon::Point PUZZLE_CENTER(65, 13);
+const Chthon::Point PUZZLE_CENTER(LEFT_STATUS_BAR + 6, 4);
 
 struct Character {
 	Chthon::Point pos;
@@ -132,6 +132,7 @@ private:
 	int strength, endurance;
 	std::map<char, MiniSprite> minisprites;
 	std::map<char, Sprite> sprites;
+	Sprite statusbar;
 
 	bool fight(int enemy_count);
 	void map_mode();
@@ -315,26 +316,55 @@ Game::Game()
 	minisprites['*'] = '*' | COLOR_PAIR(4) | A_BOLD;
 	minisprites['X'] = 'X' | COLOR_PAIR(2) | A_BOLD;
 
-	Chthon::InterleavedCharMap sprites_data = { 7, 5, 6, {
-	"  '    ", "@@@@@@@", "   @   ",  "  38   ",  " /===\\ ", " \\   / ", 
-	" '    '", "@@@@@@@", "  / \\ |", "  ###  ",  "/     \\", "  \\ /  ", 
-	"  ' '  ", "@@@@@@@", " /|_|\\+", "3/#3/  ",  "+-----+",  "   X   ", 
-	" '  '  ", "@@@@@@@", "  | |  ",  "  S S\\ ", "|  9  |",  "  / \\  ", 
-	"       ", " # # # ", "  L L  ",  "  S S ^",  "L_____J",  " /   \\ ", 
+	Chthon::InterleavedCharMap sprites_data = { 9, 5, 6, {
+	"  '      ", "@@@@@@@@@", "    @    ",  "   38    ",  " /=====\\ ", "  \\   /  ", 
+	" '    '  ", "@@@@@@@@@", "   / \\ | ", "   ###   ",  "/       \\", "   \\ /   ", 
+	"  ' '    ", "@@@@@@@@@", "  /|_|\\+ ", " 3/#3/   ",  "+-------+",  "    X    ", 
+	" '  '  ' ", "@@@@@@@@@", "   | |   ",  "   S S\\  ", "|   9   |",  "   / \\   ", 
+	"     ;   ", " # # # # ", "   L L   ",  "   S S ^ ",  "L_______J",  "  /   \\  ", 
 	}};
-	sprites[' '] = Sprite(7, 5, ' ');
-	sprites['.'] = Sprite(7, 5, sprites_data.begin(0), sprites_data.end(0));
+	sprites[' '] = Sprite(sprites_data.width, sprites_data.height, ' ');
+	sprites['.'] = Sprite(sprites_data.width, sprites_data.height, sprites_data.begin(0), sprites_data.end(0));
 	for(int & cell : sprites['.']) cell |= COLOR_PAIR(1);
-	sprites['#'] = Sprite(7, 5, sprites_data.begin(1), sprites_data.end(1));
+	sprites['#'] = Sprite(sprites_data.width, sprites_data.height, sprites_data.begin(1), sprites_data.end(1));
 	for(int & cell : sprites['#']) cell |= COLOR_PAIR(1) | A_BOLD;
-	sprites['@'] = Sprite(7, 5, sprites_data.begin(2), sprites_data.end(2));
+	sprites['@'] = Sprite(sprites_data.width, sprites_data.height, sprites_data.begin(2), sprites_data.end(2));
 	for(int & cell : sprites['@']) cell |= COLOR_PAIR(2) | A_BOLD;
-	sprites['A'] = Sprite(7, 5, sprites_data.begin(3), sprites_data.end(3));
+	sprites['A'] = Sprite(sprites_data.width, sprites_data.height, sprites_data.begin(3), sprites_data.end(3));
 	for(int & cell : sprites['A']) cell |= COLOR_PAIR(3) | A_BOLD;
-	sprites['*'] = Sprite(7, 5, sprites_data.begin(4), sprites_data.end(4));
+	sprites['*'] = Sprite(sprites_data.width, sprites_data.height, sprites_data.begin(4), sprites_data.end(4));
 	for(int & cell : sprites['*']) cell |= COLOR_PAIR(4) | A_BOLD;
-	sprites['X'] = Sprite(7, 5, sprites_data.begin(5), sprites_data.end(5));
+	sprites['X'] = Sprite(sprites_data.width, sprites_data.height, sprites_data.begin(5), sprites_data.end(5));
 	for(int & cell : sprites['X']) cell |= COLOR_PAIR(2) | A_BOLD;
+
+	const std::string statusbar_data = 
+		"+===========+===============================+"
+		"|Puzzle map |                               |"
+		"|           |                               |"
+		"|           |                               |"
+		"|           |                               |"
+		"|           |                               |"
+		"|           |                               |"
+		"+===========+===============================+"
+		"| (hjklyubn) Move                           |"
+		"| (m) Show map                              |"
+		"| (c) Character screen                      |"
+		"| (d) Dig for artifact                      |"
+		"|                                           |"
+		"| Walk onto enemy to fight with them.       |"
+		"| Walk onto treasure to collect it.         |"
+		"| Be careful not to fight with forces       |"
+		"| greater than you can handle.              |"
+		"| But do not waste any time! It's running   |"
+		"| out.                                      |"
+		"| Check map often. Once you're sure about   |"
+		"| artifact location, go there and dig.      |"
+		"| Don't forget to spend money on your       |"
+		"| character stats! It could reaaly help.    |"
+		"|                                           |"
+		"+===========================================+"
+		;
+	statusbar = Sprite(45, 25, statusbar_data.begin(), statusbar_data.end());
 
 
 	for(int i = 0; i < MAP_SIZE * MAP_SIZE * 2 / 5; ++i) {
@@ -361,8 +391,13 @@ int Game::run()
 {
 	while(!quit) {
 		erase();
-		mvprintw(0, LEFT_STATUS_BAR, "Money: %d", money);
-		mvprintw(1, LEFT_STATUS_BAR, "Days left: %d", days_left);
+		for(int x = 0; x < statusbar.width(); ++x) {
+			for(int y = 0; y < statusbar.height(); ++y) {
+				mvaddch(y, LEFT_STATUS_BAR + x, statusbar.cell(x, y));
+			}
+		}
+		mvprintw(1, LEFT_STATUS_BAR + 14, "Money: %d", money);
+		mvprintw(2, LEFT_STATUS_BAR + 14, "Days left: %d", days_left);
 		for(int x = -VIEW_RADIUS; x <= VIEW_RADIUS; ++x) {
 			for(int y = -VIEW_RADIUS; y <= VIEW_RADIUS; ++y) {
 				Chthon::Point pos = player + Chthon::Point(x, y);
