@@ -314,13 +314,27 @@ Game::Game()
 	minisprites['A'] = 'A' | COLOR_PAIR(3) | A_BOLD;
 	minisprites['*'] = '*' | COLOR_PAIR(4) | A_BOLD;
 	minisprites['X'] = 'X' | COLOR_PAIR(2) | A_BOLD;
+
+	Chthon::InterleavedCharMap sprites_data = { 7, 5, 6, {
+	"  '    ", "@@@@@@@", "   @   ",  "  38   ",  " /===\\ ", " \\   / ", 
+	" '    '", "@@@@@@@", "  / \\ |", "  ###  ",  "/     \\", "  \\ /  ", 
+	"  ' '  ", "@@@@@@@", " /|_|\\+", "3/#3/  ",  "+-----+",  "   X   ", 
+	" '  '  ", "@@@@@@@", "  | |  ",  "  S S\\ ", "|  9  |",  "  / \\  ", 
+	"       ", " # # # ", "  L L  ",  "  S S ^",  "L_____J",  " /   \\ ", 
+	}};
 	sprites[' '] = Sprite(7, 5, ' ');
-	sprites['.'] = Sprite(7, 5, '"' | COLOR_PAIR(1));
-	sprites['#'] = Sprite(7, 5, '#' | COLOR_PAIR(1) | A_BOLD);
-	sprites['@'] = Sprite(7, 5, '@' | COLOR_PAIR(2) | A_BOLD);
-	sprites['A'] = Sprite(7, 5, 'A' | COLOR_PAIR(3) | A_BOLD);
-	sprites['*'] = Sprite(7, 5, '*' | COLOR_PAIR(4) | A_BOLD);
-	sprites['X'] = Sprite(7, 5, 'X' | COLOR_PAIR(2) | A_BOLD);
+	sprites['.'] = Sprite(7, 5, sprites_data.begin(0), sprites_data.end(0));
+	for(int & cell : sprites['.']) cell |= COLOR_PAIR(1);
+	sprites['#'] = Sprite(7, 5, sprites_data.begin(1), sprites_data.end(1));
+	for(int & cell : sprites['#']) cell |= COLOR_PAIR(1) | A_BOLD;
+	sprites['@'] = Sprite(7, 5, sprites_data.begin(2), sprites_data.end(2));
+	for(int & cell : sprites['@']) cell |= COLOR_PAIR(2) | A_BOLD;
+	sprites['A'] = Sprite(7, 5, sprites_data.begin(3), sprites_data.end(3));
+	for(int & cell : sprites['A']) cell |= COLOR_PAIR(3) | A_BOLD;
+	sprites['*'] = Sprite(7, 5, sprites_data.begin(4), sprites_data.end(4));
+	for(int & cell : sprites['*']) cell |= COLOR_PAIR(4) | A_BOLD;
+	sprites['X'] = Sprite(7, 5, sprites_data.begin(5), sprites_data.end(5));
+	for(int & cell : sprites['X']) cell |= COLOR_PAIR(2) | A_BOLD;
 
 
 	for(int i = 0; i < MAP_SIZE * MAP_SIZE * 2 / 5; ++i) {
