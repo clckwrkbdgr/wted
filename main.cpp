@@ -23,6 +23,7 @@ enum {
 	PLAYER_DAMAGE_RANGE = 3,
 	ENEMY_DAMAGE_RANGE = 3,
 	DAYS_LEFT = 300,
+	DAYS_FOR_DIGGING = 7,
 	MAX_ENEMY_COUNT = 3,
 	BASE_MONEY_FOR_BATTLE = 100,
 	MAX_MONEY_FOR_ONE_ENEMY = 200,
@@ -113,6 +114,46 @@ Chthon::Point get_shift(int control)
 		case 'n' : return Chthon::Point( 1,  1);
 		default: return Chthon::Point();
 	}
+}
+
+void artifact_found()
+{
+	mvprintw(11, 27, "+--------------------------+");
+	mvprintw(12, 27, "|You've found the artifact!|");
+	mvprintw(13, 27, "|      Good for you.       |");
+	mvprintw(14, 27, "| (press <space> to exit)  |");
+	mvprintw(15, 27, "+--------------------------+");
+	while(getch() != ' ');
+}
+
+void no_artifact_here()
+{
+	mvprintw(11, 27, "+--------------------------+");
+	mvprintw(12, 27, "|  Artifact is not here!   |");
+	mvprintw(13, 27, "| Precious time is wasted. |");
+	mvprintw(14, 27, "|      (press <space>)     |");
+	mvprintw(15, 27, "+--------------------------+");
+	while(getch() != ' ');
+}
+
+void player_died()
+{
+	mvprintw(11, 27, "+--------------------------+");
+	mvprintw(12, 27, "|You were killed in battle.|");
+	mvprintw(13, 27, "|      Game is over.       |");
+	mvprintw(14, 27, "| (press <space> to exit)  |");
+	mvprintw(15, 27, "+--------------------------+");
+	while(getch() != ' ');
+}
+
+void time_ran_out()
+{
+	mvprintw(11, 27, "+---------------------------+");
+	mvprintw(12, 27, "|Time ran out and you didn't|");
+	mvprintw(13, 27, "|     find the artifact.    |");
+	mvprintw(14, 27, "|  (press <space> to exit)  |");
+	mvprintw(15, 27, "+---------------------------+");
+	while(getch() != ' ');
 }
 
 class Game {
@@ -355,7 +396,7 @@ Game::Game()
 		"| (hjklyubn) Move                           |"
 		"| (m) Show map                              |"
 		"| (c) Character screen                      |"
-		"| (d) Dig for artifact                      |"
+		"| (d) Dig for artifact (for 7 days)         |"
 		"|                                           |"
 		"| Walk onto enemy to fight with them.       |"
 		"| Walk onto treasure to collect it.         |"
@@ -471,7 +512,11 @@ int Game::run()
 			case 'd':
 			{
 				if(player == artifact) {
+					artifact_found();
 					quit = true;
+				} else {
+					no_artifact_here();
+					days_left -= DAYS_FOR_DIGGING;
 				}
 				break;
 			}
@@ -504,6 +549,7 @@ int Game::run()
 								);
 						puzzle.cell(piece) = 1;
 					} else {
+						player_died();
 						quit = true;
 					}
 				}
@@ -512,6 +558,7 @@ int Game::run()
 			}
 			--days_left;
 			if(days_left <= 0) {
+				time_ran_out();
 				quit = true;
 			}
 		}
