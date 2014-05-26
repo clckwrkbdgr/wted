@@ -464,6 +464,36 @@ Game::Game()
 
 int Game::run()
 {
+	const char * startup_screen =
+		"           ___________________________________________________________          \n"
+		"          /                                                        /_ \\         \n"
+		"          |                                                        |/ |         \n"
+		"          |     After a long, wasteful bloodshed that Evil brought |\\_/         \n"
+		"          | upon  peaceful eastern province,  it was defeated  and |            \n"
+		"          | discarded back  to the Empty Lands,  where it belongs. |            \n"
+		"          | No one  is dare  to  go  to  the  Empty Lands  without |            \n"
+		"          | legions  on their side.  But when  Evil  had  attacked |            \n"
+		"          | castle, it stole precious artifact, that was stored in |            \n"
+		"          | the abbey.  Lasandra's  Prism,  an  old  relic,  which |            \n"
+		"          | contains the soul of a saint.  It is an artifact, most |            \n"
+		"          | feared  by  the  Evil.  It  should  not be left in the |            \n"
+		"          | middle of the Empty Lands.  Your mission is to recover |            \n"
+		"          | that artifact.  And  stay alive,  of course.  No  more |            \n"
+		"          | man's blood should be spilled.  You must go there,  to |            \n"
+		"          | that strange and horrible land.                        |            \n"
+		"          |                                                        |            \n"
+		"          |                Where the Evil dwells.                  |            \n"
+		"          |                                                        |            \n"
+		"          |                                                        |            \n"
+		"          |                                                        |            \n"
+		"        __|_______________________________________________________ |            \n"
+		"       /                                                        / \\|            \n"
+		"       |                                                        |_/|            \n"
+		"       \\________________________________________________________\\__/            \n"
+		;
+	mvprintw(0, 0, "%s", startup_screen);
+	getch();
+
 	while(!quit) {
 		erase();
 		for(int x = 0; x < statusbar.width(); ++x) {
