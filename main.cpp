@@ -132,7 +132,7 @@ private:
 	int strength, endurance;
 	std::map<char, MiniSprite> minisprites;
 	std::map<char, Sprite> sprites;
-	Sprite statusbar;
+	Sprite statusbar, fight_statusbar;
 
 	bool fight(int enemy_count);
 	void map_mode();
@@ -155,6 +155,11 @@ bool Game::fight(int enemy_count)
 	std::vector<std::string> fightlog;
 	while(!done) {
 		erase();
+		for(int x = 0; x < fight_statusbar.width(); ++x) {
+			for(int y = 0; y < fight_statusbar.height(); ++y) {
+				mvaddch(y, LEFT_STATUS_BAR + x, fight_statusbar.cell(x, y));
+			}
+		}
 		for(int x = 0; x < battlefield.width(); ++x) {
 			for(int y = 0; y < battlefield.height(); ++y) {
 				draw_sprite(BATTLE_MAP, Chthon::Point(x, y), sprites[battlefield.cell(x, y)]);
@@ -164,10 +169,10 @@ bool Game::fight(int enemy_count)
 		for(const Character & enemy : enemies) {
 			draw_sprite(BATTLE_MAP, enemy.pos, sprites['A']);
 		}
-		mvprintw(0, LEFT_STATUS_BAR, "HP: %d", player.hp);
+		mvprintw(1, LEFT_STATUS_BAR + 1, "HP: %d", player.hp);
 		int start_line = std::max(int(fightlog.size()) - FIGHTLOG_SIZE, 0);
 		for(int i = start_line; i < fightlog.size(); ++i) {
-			mvprintw(1 + i - start_line, LEFT_STATUS_BAR, "%s", fightlog[i].c_str());
+			mvprintw(3 + i - start_line, LEFT_STATUS_BAR + 1, "%s", fightlog[i].c_str());
 		}
 
 		Chthon::Point shift;
@@ -366,6 +371,34 @@ Game::Game()
 		;
 	statusbar = Sprite(45, 25, statusbar_data.begin(), statusbar_data.end());
 
+	const std::string fight_statusbar_data = 
+		"+===========================================+"
+		"|                                           |"
+		"+===========================================+"
+		"|                                           |"
+		"|                                           |"
+		"|                                           |"
+		"|                                           |"
+		"|                                           |"
+		"|                                           |"
+		"|                                           |"
+		"|                                           |"
+		"|                                           |"
+		"|                                           |"
+		"|                                           |"
+		"|                                           |"
+		"|                                           |"
+		"+===========================================+"
+		"|                                           |"
+		"| (hjklyubn) Move                           |"
+		"|                                           |"
+		"| Walk onto enemy to fight with them.       |"
+		"| Use natural obstacles to fight enemies    |"
+		"| one by one.                               |"
+		"|                                           |"
+		"+===========================================+"
+		;
+	fight_statusbar = Sprite(45, 25, fight_statusbar_data.begin(), fight_statusbar_data.end());
 
 	for(int i = 0; i < MAP_SIZE * MAP_SIZE * 2 / 5; ++i) {
 		map.cell(rand() % MAP_SIZE, rand() % MAP_SIZE) = '#';
