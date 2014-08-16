@@ -81,6 +81,21 @@ Chthon::Point get_random_free_pos(const Chthon::Map<Cell> & map)
 			);
 }
 
+Chthon::Point get_random_free_pos(const Chthon::Map<Cell> & map, const std::list<Evil> & evil)
+{
+	return generate_value<Chthon::Point>(MAP_SIZE * MAP_SIZE,
+			[](){ return Chthon::Point(rand() % MAP_SIZE, rand() % MAP_SIZE); },
+			[map, evil](const Chthon::Point & p){
+				for(const Evil & e : evil) {
+					if(e.pos == p) {
+						return false;
+					}
+				}
+				return map.cell(p).sprite == '.';
+			}
+			);
+}
+
 void draw_sprite(const Chthon::Point & start, const Chthon::Point & pos, const Sprite & sprite)
 {
 	for(int x = 0; x < sprite.width(); ++x) {
@@ -450,7 +465,7 @@ Game::Game()
 		map.cell(get_random_free_pos(map)) = '*';
 	}
 	for(int i = 0; i < PUZZLE_SIZE * PUZZLE_SIZE; ++i) {
-		evil.push_back(Evil(get_random_free_pos(map), 1 + rand() % MAX_ENEMY_COUNT));
+		evil.push_back(Evil(get_random_free_pos(map, evil), 1 + rand() % MAX_ENEMY_COUNT));
 	}
 
 	artifact = generate_value<Chthon::Point>(MAP_SIZE * MAP_SIZE,
