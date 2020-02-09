@@ -1,3 +1,7 @@
+#VERSION=$(shell git tag | sed 's/.*\([0-9]\+\.[0-9]\+\.[0-9]\+\)/\1/' | sort -nt . | tail -1)
+# TODO git tags here are not describing versions actually.
+VERSION=0.0.1
+
 BIN = wted
 LIBS = -lchthon2 -lncurses
 
@@ -13,6 +17,16 @@ run: $(BIN)
 
 $(BIN): $(OBJ)
 	$(CXX) $(LIBS) -o $@ $^
+
+deb: $(BIN)
+	@debpackage.py \
+		$(BIN) \
+		-v $(VERSION) \
+		--maintainer 'umi041 <umi0451@gmail.com>' \
+		--bin $(BIN) \
+		--build-dir tmp \
+		--dest-dir . \
+		--description 'Very simple game with ASCII graphics.'
 
 tmp/%.o: %.cpp
 	@echo Compiling $<...

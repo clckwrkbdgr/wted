@@ -24,6 +24,7 @@
 tmp/
 wted
 *.log
+*.deb
 
 # Vim
 .*.swp
