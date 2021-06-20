@@ -239,11 +239,16 @@ bool Game::fight(int enemy_count)
 				case 'q' : return false;
 			}
 			bool choice_made = !shift.null();
+            if(!choice_made) {
+                continue;
+            }
 			bool valid_pos = battlefield.valid(player.pos + shift);
-			bool not_forest = battlefield.cell(player.pos + shift) != '#';
-			if(choice_made && valid_pos && not_forest) {
-				break;
-			}
+            if(valid_pos) {
+                bool not_forest = battlefield.cell(player.pos + shift) != '#';
+                if(not_forest) {
+                    break;
+                }
+            }
 		}
 
 		bool fought = false;
